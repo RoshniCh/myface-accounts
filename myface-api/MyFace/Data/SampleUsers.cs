@@ -1,6 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using MyFace.Models.Database;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System; 
+
 
 namespace MyFace.Data
 {
@@ -8,7 +12,9 @@ namespace MyFace.Data
     {
         public static int NumberOfUsers = 100;
         
-        private static IList<IList<string>> _data = new List<IList<string>>
+        
+
+    private static IList<IList<string>> _data = new List<IList<string>>
         {
             new List<string> { "Kania", "Placido", "kplacido0", "kplacido0@qq.com" },
             new List<string> { "Scotty", "Gariff", "sgariff1", "sgariff1@biblegateway.com" },
@@ -111,7 +117,7 @@ namespace MyFace.Data
             new List<string> { "Jane", "Iceton", "jiceton2q", "jiceton2q@lulu.com" },
             new List<string> { "Marjy", "Beadell", "mbeadell2r", "mbeadell2r@delicious.com" }
         };
-        
+         
         public static IEnumerable<User> GetUsers()
         {
             return Enumerable.Range(0, NumberOfUsers).Select(CreateRandomUser);
@@ -119,6 +125,20 @@ namespace MyFace.Data
 
         private static User CreateRandomUser(int index)
         {
+            string string_password= "Timmy";
+            byte[] salt = new byte[128 / 8];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
+            string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: string_password,
+                salt: salt,
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+            
+            
             return new User
             {
                 FirstName = _data[index][0],
@@ -127,7 +147,10 @@ namespace MyFace.Data
                 Email = _data[index][3],
                 ProfileImageUrl = ImageGenerator.GetProfileImage(_data[index][2]),
                 CoverImageUrl = ImageGenerator.GetCoverImage(index),
+                Hashed_Password = hashed,
+                Salt = Convert.ToBase64String(salt), 
             };
         }
     }
 }
+

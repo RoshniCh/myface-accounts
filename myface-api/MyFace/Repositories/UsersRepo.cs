@@ -3,6 +3,9 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using MyFace.Models.Database;
 using MyFace.Models.Request;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System; 
+using System.Security.Cryptography;
 
 namespace MyFace.Repositories
 {
@@ -11,6 +14,7 @@ namespace MyFace.Repositories
         IEnumerable<User> Search(UserSearchRequest search);
         int Count(UserSearchRequest search);
         User GetById(int id);
+        User GetByUserName(String username);
         User Create(CreateUserRequest newUser);
         User Update(int id, UpdateUserRequest update);
         void Delete(int id);
@@ -58,8 +62,29 @@ namespace MyFace.Repositories
                 .Single(user => user.Id == id);
         }
 
+        public User GetByUserName(string username)
+        {
+            return _context.Users
+                .Single(user => user.Username == username);
+        }
+
         public User Create(CreateUserRequest newUser)
         {
+            string string_password = newUser.Password; 
+            byte[] byte_salt = new byte[128 / 8];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(byte_salt);
+            }
+            string hashed_password = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: string_password,
+                salt: byte_salt,
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+            
+            // newUser.Password = hashed_password;
+
             var insertResponse = _context.Users.Add(new User
             {
                 FirstName = newUser.FirstName,
@@ -68,6 +93,8 @@ namespace MyFace.Repositories
                 Username = newUser.Username,
                 ProfileImageUrl = newUser.ProfileImageUrl,
                 CoverImageUrl = newUser.CoverImageUrl,
+                Hashed_Password = hashed_password,
+                Salt = Convert.ToBase64String(byte_salt),
             });
             _context.SaveChanges();
 
