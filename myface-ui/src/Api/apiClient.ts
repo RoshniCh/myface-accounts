@@ -80,6 +80,16 @@ export async function fetchPostsDislikedBy(page: number, pageSize: number, userI
     return await response.json();
 }
 
+export async function login(encodedUsernamePassword: string) {
+    const response = await fetch(`https://localhost:5001/login`,
+    {
+        headers: {
+            "Authorization": `Basic ${encodedUsernamePassword}`
+        }
+    })
+    return await response.status;
+}
+
 export async function createPost(newPost: NewPost) {
     const response = await fetch(`https://localhost:5001/posts/create`, {
         method: "POST",

@@ -23,6 +23,7 @@ function Routes(): ReactElement {
             <Route exact path="/users" component={Users}/>
             <Route exact path="/users/:id" component={Profile}/>
             <Route exact path="/new-post" component={CreatePost}/>
+
             <Route path="" component={NotFound}/>
         </Switch>
     );

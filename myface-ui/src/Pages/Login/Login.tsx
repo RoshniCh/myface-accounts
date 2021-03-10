@@ -1,6 +1,7 @@
 ﻿import React, {FormEvent, useContext, useState} from 'react';
 import {Page} from "../Page/Page";
 import {LoginContext} from "../../Components/LoginManager/LoginManager";
+import {login} from "../../Api/apiClient";
 import "./Login.scss";
 
 export function Login(): JSX.Element {
@@ -9,9 +10,20 @@ export function Login(): JSX.Element {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     
+    
     function tryLogin(event: FormEvent) {
         event.preventDefault();
-        loginContext.logIn();
+        const list = [username, password];
+        var usernamePassword = list.join(':');
+        var encodedUsernamePassword = btoa(usernamePassword);
+        
+        var status = login(encodedUsernamePassword).then(status => {
+            if (status==200)
+            {
+                loginContext.logIn();
+                // loginContext.logIn(encodedUsernamePassword);
+            }
+        });
     }
     
     return (

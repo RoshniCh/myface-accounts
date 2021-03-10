@@ -48,8 +48,7 @@ namespace MyFace.Controllers
                     prf: KeyDerivationPrf.HMACSHA1,
                     iterationCount: 10000,
                     numBytesRequested: 256 / 8));
-                Console.WriteLine(hashed_password);
-                Console.WriteLine(correct_hashed_password);
+
                 if (hashed_password == correct_hashed_password)
                 {
                     var users = _users.Search(searchRequest);
@@ -59,17 +58,12 @@ namespace MyFace.Controllers
                 else
                     {
                         return Unauthorized("Invalid authorisation");
-                        // return BadRequest(ModelState);
                     
                     }
             } 
             else
             {
                     return Unauthorized("Invalid authorisation");
-                // return BadRequest(ModelState);
-
-            //  throw new Exception("The authorization header is either empty or isn't Basic.");
-                
             }
                   
         }
