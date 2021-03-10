@@ -6,16 +6,64 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System; 
 using System.Security.Cryptography;
 using System.Web;
-// using Microsoft.AspNetCore.Http.HttpContext;
 using Microsoft.AspNetCore.Http; 
 using System.Text;
 
 namespace MyFace.Controllers
 {
+ 
+
     [ApiController]
     [Route("/users")]
     public class UsersController : ControllerBase
     {
+        public interface Authentication
+        {
+            bool AuthenticateUser(string authHeader);
+        }
+
+        class UserAuth : Authentication
+        {  
+            public bool AuthenticateUser(string authHeader)
+            {
+                // code to authernticate
+                if (authHeader != null && authHeader.StartsWith("Basic")) 
+                {
+                    string encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
+                    Encoding encoding = Encoding.GetEncoding("iso-8859-1");
+                    string usernamePassword = encoding.GetString(Convert.FromBase64String(encodedUsernamePassword));
+
+                    int seperatorIndex = usernamePassword.IndexOf(':');
+
+                    var username = usernamePassword.Substring(0, seperatorIndex);
+                    var password = usernamePassword.Substring(seperatorIndex + 1);
+                    
+                    var user = _users.GetByUserName(username);
+                    var correct_hashed_password=user.Hashed_Password;
+            
+                    string hashed_password = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                        password: password,
+                        salt: Convert.FromBase64String(user.Salt),
+                        prf: KeyDerivationPrf.HMACSHA1,
+                        iterationCount: 10000,
+                        numBytesRequested: 256 / 8));
+                        bool validUser = false;
+                    if (hashed_password == correct_hashed_password)
+                        {
+                        validUser = true;
+                        }
+                    else 
+                    {
+                        validUser = false;
+                    }
+                    return validUser;
+                }
+                else
+                {
+                    return (false);
+                }
+            }
+        }
         private readonly IUsersRepo _users;
         
 
@@ -23,54 +71,30 @@ namespace MyFace.Controllers
         {
             _users = users;
         }
-        
+        UserAuth test = new UserAuth();
         [HttpGet("")]
         public ActionResult<UserListResponse> Search([FromQuery] UserSearchRequest searchRequest)
         {
             string authHeader = Request.Headers["Authorization"];
-            if (authHeader != null && authHeader.StartsWith("Basic")) 
+            bool validUser = test.AuthenticateUser(authHeader);
+
+            if (validUser == true)
             {
-                string encodedUsernamePassword = authHeader.Substring("Basic ".Length).Trim();
-                Encoding encoding = Encoding.GetEncoding("iso-8859-1");
-                string usernamePassword = encoding.GetString(Convert.FromBase64String(encodedUsernamePassword));
-
-                int seperatorIndex = usernamePassword.IndexOf(':');
-
-                var username = usernamePassword.Substring(0, seperatorIndex);
-                var password = usernamePassword.Substring(seperatorIndex + 1);
-                
-                var user = _users.GetByUserName(username);
-                var correct_hashed_password=user.Hashed_Password;
-        
-                string hashed_password = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                    password: password,
-                    salt: Convert.FromBase64String(user.Salt),
-                    prf: KeyDerivationPrf.HMACSHA1,
-                    iterationCount: 10000,
-                    numBytesRequested: 256 / 8));
-                Console.WriteLine(hashed_password);
-                Console.WriteLine(correct_hashed_password);
-                if (hashed_password == correct_hashed_password)
-                {
-                    var users = _users.Search(searchRequest);
-                    var userCount = _users.Count(searchRequest);
-                    return UserListResponse.Create(searchRequest, users, userCount);
-                }  
-                else
-                    {
-                        return Unauthorized("Invalid authorisation");
-                        // return BadRequest(ModelState);
-                    
-                    }
-            } 
+                var users = _users.Search(searchRequest);
+                var userCount = _users.Count(searchRequest);
+                return UserListResponse.Create(searchRequest, users, userCount);
+            }  
             else
             {
-                    return Unauthorized("Invalid authorisation");
-                // return BadRequest(ModelState);
-
-            //  throw new Exception("The authorization header is either empty or isn't Basic.");
-                
+                return Unauthorized("Invalid authorisation");
+                    // return BadRequest(ModelState);    
             }
+        
+            // else
+            // {
+            //     return Unauthorized("Invalid authorisation");
+            //     // return BadRequest(ModelState);
+            // }
                   
         }
 

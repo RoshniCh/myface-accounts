@@ -20,9 +20,5 @@ namespace MyFace.Models.Response
         public string ProfileImageUrl => _user.ProfileImageUrl;
         public string CoverImageUrl => _user.CoverImageUrl;
 
-        // public string Password => _user.Password;
-        // public string Hashed_Password => _user.Hashed_Password;
-        // public string Salt => _user.Salt;
-        // //we need to add hashed password and salt here :)
     }
 }

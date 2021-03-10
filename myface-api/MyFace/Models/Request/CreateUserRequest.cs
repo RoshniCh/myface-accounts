@@ -27,7 +27,5 @@ namespace MyFace.Models.Request
         [Required]
         [StringLength(40, MinimumLength= 5, ErrorMessage ="Password must be between 5 and 40 characters. ")]
         public string Password { get; set; }
-        // public string Salt { get; set;}
-        // public string Hashed_Password { get; set; }
     }
 }
